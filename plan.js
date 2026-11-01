@@ -18,13 +18,21 @@
     return (withDow === false ? '' : DOW[dow(n)] + ' ') + d.getUTCDate() + ' ' + MON[d.getUTCMonth()];
   }
 
-  // Restarted 1 Nov 2026 after illness: Week 1 = Mon 2 Nov, final test Fri 18 Jun 2027 (Week 33).
+  // Which person's plan: set by the page (window.LIFT_PROFILE) or env LIFT_PROFILE in Node. Default: Nuwan.
+  var WHO = (typeof window !== 'undefined' && window.LIFT_PROFILE) || (typeof process !== 'undefined' && process.env && process.env.LIFT_PROFILE) || 'nuwan';
+  var PAM = WHO === 'pam';
+  // Restarted 1 Nov 2026 after illness: Week 1 = Mon 2 Nov, final test Fri 18 Jun 2027 (Week 33). Same calendar for both plans.
   var WEEK1_MON = dnISO('2026-11-02');
   var START = WEEK1_MON;                     // Mon — plan day 1
   var END = dnISO('2027-06-18');             // Fri — final test day, Week 33
   var WEEKS = 33;
 
-  var PHASES = [
+  var PHASES = PAM ? [
+    { n: 1, name: 'Rebuild', from: 1, to: 6, gate: 24, of: 30, steps: 9000, protein: 110, kcal: null },
+    { n: 2, name: 'Build', from: 7, to: 14, gate: 28, of: 34, steps: 9000, protein: 110, kcal: null },
+    { n: 3, name: 'Strength & shape', from: 15, to: 23, gate: 36, of: 45, steps: 9000, protein: 110, kcal: null },
+    { n: 4, name: 'Lean out', from: 24, to: 33, gate: 40, of: 49, steps: 10000, protein: 110, kcal: null }
+  ] : [
     { n: 1, name: 'Restart', from: 1, to: 6, gate: 20, of: 24, steps: 7000, protein: 150, kcal: null },
     { n: 2, name: 'Build', from: 7, to: 14, gate: 23, of: 28, steps: 8000, protein: 160, kcal: 2200 },
     { n: 3, name: 'Strength', from: 15, to: 23, gate: 29, of: 36, steps: 8000, protein: 160, kcal: 2200 },
@@ -66,7 +74,7 @@
     bss: { name: 'Bulgarian split squat', kind: 'db', inc: 2, start: 0 },
     carry: { name: 'Sandbag carry', kind: 'carry', inc: 0, start: 22 },
     tire: { name: 'Tractor tire flip', kind: 'bw', inc: 0, start: 0 },
-    dbpress: { name: 'Dumbbell floor/bench press', kind: 'db', inc: 2, start: 11.5, perHand: true },
+    dbpress: { name: 'Dumbbell floor/bench press', kind: 'db', inc: 2, start: 11.5, perHand: true, seed: { k: 'incdb', x: 1 } },
     dbrow: { name: 'Dumbbell row', kind: 'db', inc: 2, start: 13.5 },
     dbsp: { name: 'Dumbbell shoulder press', kind: 'db', inc: 2, start: 9, perHand: true },
     pullapart: { name: 'Band pull-apart', kind: 'bw', inc: 0, start: 0 },
@@ -85,9 +93,25 @@
     arnold: { name: 'Arnold press (standing)', kind: 'db', inc: 2, start: 8, perHand: true, seed: { k: 'dbsp', x: 0.85 } },
     // Arms, Day D from Week 3 (superset)
     curl: { name: 'Dumbbell curl', kind: 'db', inc: 2, start: null, perHand: true },
-    ohext: { name: 'Overhead triceps extension (one DB, two hands)', kind: 'db', inc: 2, start: null }
+    ohext: { name: 'Overhead triceps extension (one DB, two hands)', kind: 'db', inc: 2, start: null },
+    // Pam's plan
+    hipthrust: { name: 'Barbell hip thrust', kind: 'bb', inc: 5, start: null },
+    abductor: { name: 'Hip abduction machine', kind: 'machine', inc: 2.5, start: null },
+    incdb: { name: 'Incline dumbbell press', kind: 'db', inc: 2, start: null, perHand: true },
+    pushdown: { name: 'Triceps rope pushdown', kind: 'cable', inc: 2.5, start: null },
+    pallof: { name: 'Pallof press (cable)', kind: 'cable', inc: 2.5, start: null },
+    backext: { name: 'Back extension (45°)', kind: 'bw', inc: 0, start: 0 },
+    farmer: { name: 'Dumbbell farmer carry', kind: 'carry', inc: 0, start: null },
+    glutebridge: { name: 'Dumbbell glute bridge (pause at the top)', kind: 'db', inc: 2, start: null },
+    pushup: { name: 'Push-up (hands on a bench or step if needed)', kind: 'bw', inc: 0, start: 0 },
+    revfly: { name: 'Bent-over reverse fly', kind: 'db', inc: 1, start: null, perHand: true },
+    pcore: { name: 'Dead bug 8/side + side plank 20-30 s/side + band Pallof 10/side', kind: 'rounds' },
+    incwalk: { name: 'Incline treadmill walk', kind: 'rounds' },
+    intervals: { name: 'Treadmill intervals', kind: 'rounds' },
+    srun: { name: 'Stadium run', kind: 'rounds' },
+    circuit: { name: 'Finisher circuit: goblet squat 10 · push-up 8 · DB row 10/side · farmer carry 40 m', kind: 'rounds' }
   };
-  var ROTATE = { lunge: 'stepup', pulldown: 'pulldown_cg', goblet: 'goblet_hu', dbsp: 'arnold' };
+  var ROTATE = PAM ? { lunge: 'stepup', pulldown: 'pulldown_cg', goblet: 'goblet_hu', dbsp: 'arnold', incdb: 'dbpress' } : { lunge: 'stepup', pulldown: 'pulldown_cg', goblet: 'goblet_hu', dbsp: 'arnold' };
   // 0 = original exercises, 1 = rotation partners. Weeks 1-6 original, then flip every 4 weeks (7-10 partners, 11-14 original, ...).
   function variant(w) { return w < 3 ? 0 : Math.floor((w - 3) / 4) % 2; }
   // Second half of each phase: +1 set on the day's first 3-set accessory.
@@ -120,6 +144,7 @@
     return list;
   }
   function coreSession(code, w) {
+    if (PAM) return pamSession(code, w);
     var p = phaseOfWeek(w).n, early = w <= 2;
     if (code === 'A') {
       if (p === 1) return early
@@ -169,18 +194,68 @@
     return [];
   }
 
-  var TITLES = {
+  // ---------------- Pam: 5 sessions, fat loss + shape, diastasis-safe core ----------------
+  var BREATHE = 'Breathe out on the effort. Stop the set if your belly domes or ridges.';
+  function pamSession(code, w) {
+    var p = phaseOfWeek(w).n, wk1 = w === 1;
+    var find = wk1 ? { note: 'Week 1: find your weight. End every set with 2 reps left.' } : null;
+    function n(x, extra) { var o = {}; if (find) o.note = find.note; if (x) o.note = (o.note ? o.note + ' ' : '') + x; if (extra) for (var k in extra) o[k] = extra[k]; return o; }
+    if (code === 'A') { // Tue gym: lower, squat + glutes
+      if (p === 1) return [I('squat', 3, '10-12', n(BREATHE)), I('hipthrust', 3, '10-12', n('Chin tucked, ribs down, squeeze 1 s at the top.')), I('rdl', 3, '10-12', n()), I('lunge', 2, '10/leg', n('Dumbbells')), I('abductor', 2, 15, n()),
+        I('incwalk', 1, '10 min', { finisher: true, note: '10-12% incline, brisk walk, no holding the rails.' })];
+      if (p === 2) return [I('squat', 4, '8-10', { note: BREATHE }), I('hipthrust', 4, '8-12', { note: 'Squeeze 1 s at the top.' }), I('rdl', 3, '8-10'), I('lunge', 3, '10/leg', { note: 'Dumbbells' }), I('abductor', 2, 15),
+        I('incwalk', 1, '12 min', { finisher: true, note: '12% incline, brisk.' })];
+      if (p === 3) return [I('squat', 4, '6-8', { inc: 2.5, note: BREATHE + ' +2.5 kg when every set hits 8.' }), I('hipthrust', 4, '8-10'), I('rdl', 3, '8-10'), I('lunge', 3, '8/leg', { note: 'Dumbbells' }), I('abductor', 2, 15),
+        I('incwalk', 1, '12 min', { finisher: true, note: '12% incline, brisk.' })];
+      return [I('squat', 3, '8-10', { inc: 2.5, note: BREATHE }), I('hipthrust', 3, '10-12'), I('rdl', 3, 10), I('lunge', 3, '10/leg', { note: 'Dumbbells' }), I('abductor', 2, 15),
+        I('intervals', 8, '1 min fast / 1 min walk', { finisher: true, note: 'Treadmill. Fast = hard but controlled, about 8 out of 10.' })];
+    }
+    if (code === 'B') { // Thu gym: upper, back + posture + triceps
+      var list = [I('pulldown', p === 1 ? 3 : 4, p === 3 ? '6-10' : '10-12', n('Pull the elbows down to your pockets, chest up.')), I('row', 3, p === 3 ? '8-10' : '10-12', n('Shoulder blades back first, then pull.')),
+        I('incdb', 3, p === 3 ? '8-10' : '10-12', n()), I('facepull', 3, 15, n('Light. Pull to the eyes, thumbs back. Posture work.')), I('pushdown', 3, '12-15', n('Backs of the arms. Elbows pinned to your sides.')),
+        I('pallof', p === 1 ? 2 : 3, '10/side', n('Deep core without crunching. ' + BREATHE))];
+      if (p === 4) list.push(I('intervals', 6, '1 min fast / 1 min walk', { finisher: true, note: 'Treadmill, about 8 out of 10.' }));
+      return list;
+    }
+    if (code === 'C') { // Sat gym: full body + intervals
+      var c = [I('legpress', 3, p >= 3 ? '10-12' : '12-15', n('Feet high and wide = more glutes.')), I('backext', 3, '12-15', n('Squeeze the glutes to come up. Hold a plate when 15 is easy.')),
+        I('pulldown', 3, '10-12', n()), I('dbsp', 3, '10-12', n('Seated, back supported.')), I('farmer', 3, '40 m', n('Heavy dumbbells, tall posture.'))];
+      var rounds = p === 1 ? 6 : p === 2 ? 8 : 10;
+      c.push(I('intervals', rounds, p === 3 ? '2 min hard / 1 min easy' : '1 min fast / 1 min walk', { finisher: true, note: 'Treadmill. Warm up 3 min first. About 8 out of 10 on the hard parts.' }));
+      return c;
+    }
+    if (code === 'D') { // Mon home: glutes + core + stadium run
+      var runTxt = p === 1 ? '20 min easy' : p === 2 ? '25 min easy' : p === 3 ? '20 min, last 8 min faster' : '25-30 min easy';
+      return [I('goblet', 3, '12-15', n()), I('dbrdl', 3, '12', n()), I('glutebridge', 3, '15', n('Pause 2 s at the top.')), I('bss', 2, '10/leg', n('Bodyweight first, then hold dumbbells.')),
+        I('pcore', 3, 'round', { note: 'No crunches or sit-ups. ' + BREATHE }), I('srun', 1, runTxt, { finisher: true, note: 'Stadium next door. Talking pace unless it says faster. Wet or icy: 20 min brisk walk.' })];
+    }
+    if (code === 'E') { // Fri home: upper, arms, core (legs rest between Thu and Sat)
+      var e = [I('dbrow', 3, '10-12/side', n()), I('pushup', 3, '6-12', n('Hands on a bench or step if the floor is too hard. Body in one straight line.')), I('dbsp', 3, '10-12', n()),
+        I('revfly', 3, '12-15', n('Light. Posture work.')), I('ohext', 3, '12-15', n('Superset with the curl: extension, curl, 60 s rest.')), I('curl', 2, '12', n('Superset with the extension')),
+        I('pcore', 3, 'round', { note: 'No crunches or sit-ups. ' + BREATHE })];
+      if (p === 4) e.push(I('circuit', 3, 'round', { finisher: true, note: 'No rest between moves, 60 s between rounds.' }));
+      return e;
+    }
+    return [];
+  }
+
+  var TITLES = PAM ? {
+    A: 'Day A · Lower: squat & glutes', B: 'Day B · Upper: back & posture', C: 'Day C · Full body + intervals', D: 'Day D · Glutes, core + run', E: 'Day E · Upper, arms & core',
+    F: '20-min floor session', T1: 'Test · Squat 8-rep max + hip thrust', T2: 'Test · Pulldown 8-rep max + push-ups',
+    T4: 'Test · 1,600 m + measurements', RUN: '1,600 m run', COND: 'Optional conditioning'
+  } : {
     A: 'Day A · Lower strength', B: 'Day B · Upper push/pull', C: 'Day C · Lower + full body', D: 'Day D · Upper + core',
     F: '20-min floor session', T1: 'Test · Squat 5-rep max', T2: 'Test · Bench 5RM + pull-ups', T3: 'Test · Deadlift 5-rep max',
     T4: 'Test · 1,600 m + measurements', RUN: '1,600 m run', COND: 'Optional conditioning'
   };
   function location(code, w) {
+    if (PAM) return (code === 'A' || code === 'B' || code === 'C' || code === 'T1' || code === 'T2') ? 'Gym' : code === 'D' ? 'Home + stadium' : (code === 'T4' || code === 'RUN') ? 'Stadium' : 'Home';
     if (code === 'A' || code === 'B' || code === 'T1' || code === 'T2' || code === 'T3') return 'Gym';
     if (code === 'C') return phaseOfWeek(w).n === 4 ? 'Stadium' : 'Home + shed';
     if (code === 'T4' || code === 'RUN' || code === 'COND') return 'Stadium';
     return 'Home';
   }
-  var MAIN = { squat: 1, bench: 1, deadlift: 1, ohp: 1 };
+  var MAIN = PAM ? { squat: 1, hipthrust: 1 } : { squat: 1, bench: 1, deadlift: 1, ohp: 1 };
 
   // Full prescription for a session code on a given date
   function session(code, iso) {
@@ -188,6 +263,8 @@
     if (code === 'F') items = [I('floor', 3, 'round', { note: 'No rest between moves, 90 s between rounds. Counts as a session.' })];
     else if (code === 'RUN') items = [I('run', 1, 'time', { note: 'Walk breaks allowed. Just record the time.' })];
     else if (code === 'COND') items = [];
+    else if (PAM && code === 'T1') items = [I('squat', 5, 8, { test: true, note: 'Work up in sets of 8 to the heaviest clean 8' }), I('hipthrust', 4, 10, { test: true, note: 'Work up to the heaviest clean 10' })];
+    else if (PAM && code === 'T2') items = [I('pulldown', 5, 8, { test: true, note: 'Work up to the heaviest clean 8' }), I('pushup', 1, 'max', { test: true, note: 'One set, as many good reps as you can' })];
     else if (code === 'T1') items = [I('squat', 6, 5, { test: true, note: 'Work up in sets of 5 to a 5-rep max' })];
     else if (code === 'T2') items = [I('bench', 6, 5, { test: true, note: 'Work up to a 5-rep max' }), I('pullup', 2, 'max', { test: true, note: 'Max strict reps' })];
     else if (code === 'T3') items = [I('deadlift', 6, 5, { test: true, note: 'Work up to a 5-rep max' })];
@@ -200,31 +277,43 @@
         note = 'Deload: 60% of working weights, half the sets. Do not skip it.';
       } else if (kind === 'xmas') {
         items = items.filter(function (it) { return !it.finisher; }).map(function (it) { var c = clone(it); c.factor = 0.7; return c; });
-        note = 'Christmas: minimum 2 sessions this week, one lower (A/C) and one upper (B/D), ~70% weights.';
+        note = PAM ? 'Christmas: minimum 2 sessions this week, one lower (A/D) and one upper (B/E), ~70% weights.' : 'Christmas: minimum 2 sessions this week, one lower (A/C) and one upper (B/D), ~70% weights.';
       } else if (kind === 'taper') {
         items = items.filter(function (it) { return !it.finisher; }).map(function (it) {
           var c = clone(it);
-          if (MAIN[c.k]) { c.sets = 3; c.reps = '3'; c.lo = 3; c.hi = 3; c.factor = 0.9; c.ofBest = true; c.note = '~90% of your best working weight'; }
+          if (MAIN[c.k]) { var tr = PAM ? 5 : 3; c.sets = 3; c.reps = String(tr); c.lo = tr; c.hi = tr; c.factor = 0.9; c.ofBest = true; c.note = '~90% of your best working weight'; }
           else if (EX[c.k].kind !== 'rounds') c.sets = Math.max(1, Math.ceil(c.sets / 2));
           return c; });
-        note = 'Taper: main lifts 3 x 3 at ~90% of your best, everything else half the sets.';
+        note = PAM ? 'Taper: squat and hip thrust 3 x 5 at ~90% of your best, everything else half the sets.' : 'Taper: main lifts 3 x 3 at ~90% of your best, everything else half the sets.';
       }
     }
-    if (w <= 2) items.forEach(function (it) { it.hold = true; }); // Weeks 1-2: no weight increases while movements come back
+    if (w <= HOLD_WEEKS) items.forEach(function (it) { it.hold = true; }); // Nuwan Weeks 1-2: no weight increases while movements come back
+    if (PAM && kind === 'normal' && !note && /^[A-E]$/.test(code)) note = 'Warm up 5 min. ' + BREATHE;
     return { code: code, title: TITLES[code], location: location(code, w), week: w, kind: kind, light: kind === 'deload' || kind === 'xmas' || kind === 'taper', items: items, note: note,
       counts: !(code === 'RUN' || code === 'COND') };
   }
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
+  var HOLD_WEEKS = PAM ? 0 : 2;
 
   // ---------------- Calendar ----------------
   // Scheduled session slots for a week: [{dow, code}]
   function slots(w) {
+    if (PAM) return w === 33 ? [{ dow: 0, code: 'D' }, { dow: 1, code: 'T1' }, { dow: 3, code: 'T2' }, { dow: 4, code: 'T4' }]
+      : [{ dow: 0, code: 'D' }, { dow: 1, code: 'A' }, { dow: 3, code: 'B' }, { dow: 4, code: 'E' }, { dow: 5, code: 'C' }];
     if (w === 33) return [{ dow: 0, code: 'T1' }, { dow: 1, code: 'T2' }, { dow: 3, code: 'T3' }, { dow: 4, code: 'T4' }];
     return [{ dow: 0, code: 'A' }, { dow: 1, code: 'B' }, { dow: 3, code: 'C' }, { dow: 4, code: 'D' }];
   }
   function required(w) { return weekKind(w) === 'xmas' ? 2 : slots(w).length; }
 
-  var SPECIAL = {
+  var SPECIAL = PAM ? {
+    '2026-11-02': { tag: 'Start', text: 'Day 1. This morning: weigh in after the toilet and measure your waist at the navel. Week 1 is for finding your weights: end every set with 2 reps left.' },
+    '2026-11-08': { code: 'RUN', tag: 'Baseline', text: '1,600 m baseline at the stadium (4 laps). Steady hard effort, record the time.' },
+    '2026-12-13': { tag: 'Gate 1', text: 'Phase 1 gate: 24 of 30 sessions logged. Measure waist + 7-day average weight.' },
+    '2027-02-07': { tag: 'Gate 2', text: 'Phase 2 gate: 28 of 34 sessions. Measure waist + 7-day average weight.' },
+    '2027-04-04': { code: 'RUN', tag: 'Retest', text: '1,600 m retest. Beat the baseline.' },
+    '2027-04-11': { tag: 'Gate 3', text: 'Phase 3 gate: 36 of 45 sessions. Measure waist + 7-day average weight.' },
+    '2027-06-18': { tag: 'Final', text: 'Final gate: 40 of 49 sessions. Last measurements: waist, 7-day average weight, 1,600 m.' }
+  } : {
     '2026-11-02': { tag: 'Start', text: 'Day 1. Measure your waist at the navel this morning. First week back after being sick: if a set feels like a grind, stop it there.' },
     '2026-11-07': { code: 'RUN', tag: 'Baseline', text: '1,600 m baseline: 4 stadium laps, walk breaks allowed, record the time.' },
     '2026-12-13': { tag: 'Gate 1', text: 'Phase 1 gate: 20 of 24 sessions logged. Measure waist + 7-day average weight.' },
@@ -247,7 +336,7 @@
     if (s) { out.type = 'session'; out.code = s.code; out.label = TITLES[s.code]; out.optional = out.kind === 'xmas'; return out; }
     if (sp && sp.code) { out.type = 'extra'; out.code = sp.code; out.label = TITLES[sp.code]; return out; }
     if (d === 6) { out.type = 'rest'; out.label = 'Full rest'; return out; }
-    if (d === 5 && w !== 33) { out.type = 'spare'; out.label = 'Spare slot: make-up or optional conditioning'; return out; }
+    if (!PAM && d === 5 && w !== 33) { out.type = 'spare'; out.label = 'Spare slot: make-up or optional conditioning'; return out; }
     if (d === 2) { out.type = 'rest'; out.label = 'Rest, or an easy 20-30 min walk'; return out; }
     out.type = 'rest'; out.label = 'Rest'; return out;
   }
@@ -256,7 +345,15 @@
     pad: pad, dnISO: dnISO, isoDn: isoDn, todayISO: todayISO, dow: dow, fmt: fmt, DOW: DOW, MON: MON,
     START: START, END: END, WEEKS: WEEKS, WEEK1_MON: WEEK1_MON, PHASES: PHASES, EX: EX, TITLES: TITLES, KIND_LABEL: KIND_LABEL,
     weekOf: weekOf, weekMon: weekMon, variant: variant, secondHalf: secondHalf, ROTATE: ROTATE, phaseOfWeek: phaseOfWeek, phaseRange: phaseRange, weekKind: weekKind,
-    slots: slots, required: required, session: session, day: day, parseReps: parseReps
+    slots: slots, required: required, session: session, day: day, parseReps: parseReps,
+    WHO: WHO, KEY: PAM ? 'lift.pam.v1' : 'lift.v1', NO_STARTS: PAM,
+    CODES: PAM ? ['A', 'B', 'C', 'D', 'E'] : ['A', 'B', 'C', 'D'], PER_WEEK: PAM ? 5 : 4,
+    LEGEND: PAM ? 'A/B/C gym, D/E home.' : 'A/B gym, C/D home. + = spare slot.',
+    BEST_KEYS: PAM ? ['squat', 'hipthrust', 'rdl', 'pulldown', 'row', 'incdb', 'legpress'] : ['squat', 'bench', 'deadlift', 'ohp', 'rdl', 'row', 'pulldown'],
+    PLAN_NAME: (PAM ? 'Pam' : 'Nuwan') + ' · 8-Month Plan 2 Nov 2026 - 18 Jun 2027',
+    WEEK1_TEXT: PAM ? 'Week 1: Mon D (home + stadium run), Tue A (gym), Thu B (gym), Fri E (home), Sat C (gym). Wed and Sun are rest. Weigh in and measure your waist on the first morning.'
+      : 'Week 1: Mon A (gym), Tue B (gym), Thu C (home), Fri D (home), Sat 7 Nov 1,600 m baseline at the stadium. Measure your waist at the navel on the first morning. First week back after being sick: easy Week 1 sessions, stop a set if it turns into a grind.',
+    NO_KCAL_TEXT: PAM ? 'Protein and steps only' : 'Phase 1: protein and steps are enough'
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = Plan; else G.Plan = Plan;
 })(this);

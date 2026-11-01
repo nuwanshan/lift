@@ -2,8 +2,8 @@
 (function () {
   'use strict';
   var P = window.Plan, EX = P.EX;
-  var VERSION = '1.4.0';
-  var KEY = 'lift.v1';
+  var VERSION = '1.5.0';
+  var KEY = P.KEY || 'lift.v1';
   var $app = document.getElementById('app');
 
   // ---------------- storage ----------------
@@ -72,7 +72,8 @@
       } else { out.w = last.top; if (item.hi) out.hint = last.sets.every(function (x) { return x.r != null && x.r >= item.hi; }) ? 'Same weight for the new sets and reps.' : 'Same weight until every set reaches ' + item.hi + '.'; }
     } else if (ex.seed && lastWorking(ex.seed.k, date) && lastWorking(ex.seed.k, date).top) {
       out.w = roundTo(lastWorking(ex.seed.k, date).top * ex.seed.x, stepFor(ex.kind)); out.hint = 'New this block: start from your ' + EX[ex.seed.k].name.toLowerCase() + ' weight.';
-    } else if (ex.start != null) out.w = ex.start;
+    } else if (ex.start != null && !P.NO_STARTS) out.w = ex.start;
+    else if (!last && item.hi && (ex.kind === 'bb' || ex.kind === 'db' || ex.kind === 'cable' || ex.kind === 'machine')) out.hint = 'First time: pick a weight you could do about ' + (item.hi + 2) + ' times, so every set ends with 2 reps left.';
     if (item.ofBest) { var b = bestWorking(item.k, date); if (b) out.w = b; }
     if (item.factor && out.w) { out.w = roundTo(out.w * item.factor, stepFor(ex.kind)); out.hint = Math.round(item.factor * 100) + '% of your working weight.'; out.up = false; }
     if (out.w === 0) out.w = null;
@@ -92,7 +93,7 @@
   }
   function targetText(it) {
     var ex = EX[it.k];
-    if (ex.kind === 'rounds') return it.sets + ' rounds';
+    if (ex.kind === 'rounds') return it.reps && it.reps !== 'round' ? (it.sets > 1 ? it.sets + ' × ' : '') + it.reps : it.sets + ' rounds';
     if (ex.kind === 'time') return 'Time it';
     if (ex.kind === 'measure') return 'Measure, cm';
     if (it.dtp) return '50-40-30-20-10';
@@ -160,10 +161,10 @@
     if (S.draft) h += '<div class="banner warn"><b>Session in progress:</b> ' + esc(S.draft.title) + ' (' + esc(P.fmt(S.draft.date)) + '). <a href="#/session" style="color:inherit;font-weight:700">Resume →</a></div>';
 
     if (dy.type === 'before') {
-      var first = P.day('2026-11-02');
-      h += '<div class="card hero"><div class="eyebrow">Plan starts Mon 2 Nov</div><h2 class="mt">' + esc(first.label) + ' · Gym</h2>' + sessionPreview('A', '2026-11-02') +
-        '<a class="btn ghost" href="#/day/2026-11-02">Open Mon 2 Nov</a></div>';
-      h += '<div class="banner info">Week 1: Mon A (gym), Tue B (gym), Thu C (home), Fri D (home), Sat 7 Nov 1,600 m baseline at the stadium. Measure your waist at the navel on the first morning. First week back after being sick: easy Week 1 sessions, stop a set if it turns into a grind.</div>';
+      var fIso = P.isoDn(P.START), first = P.day(fIso), fs = P.session(first.code, fIso);
+      h += '<div class="card hero"><div class="eyebrow">Plan starts ' + esc(P.fmt(fIso)) + '</div><h2 class="mt">' + esc(first.label) + ' · ' + esc(fs.location) + '</h2>' + sessionPreview(first.code, fIso) +
+        '<a class="btn ghost" href="#/day/' + fIso + '">Open ' + esc(P.fmt(fIso)) + '</a></div>';
+      h += '<div class="banner info">' + esc(P.WEEK1_TEXT) + '</div>';
       $app.innerHTML = h + installCard(); return bindDay(iso);
     }
     if (dy.type === 'after') { $app.innerHTML = h + '<div class="card"><h2>Plan complete</h2><p class="muted">Export your log from Progress and bring it to Claude to build the next plan.</p></div>'; return bindDay(iso); }
@@ -200,7 +201,7 @@
 
     h += dailyCard(iso, dy);
     h += '<div class="card"><div class="eyebrow">Swap freely, don\'t skip</div><p class="small muted" style="margin:6px 0 0">Can\'t do the planned day? Do another one. The weekday doesn\'t matter; the count does.</p><div class="swap">' +
-      ['A', 'B', 'C', 'D'].map(function (c) { return '<button data-start="' + c + '">Day ' + c + '</button>'; }).join('') +
+      (P.CODES || ['A', 'B', 'C', 'D']).map(function (c) { return '<button data-start="' + c + '">Day ' + c + '</button>'; }).join('') +
       '<button data-start="F">20-min floor</button><button data-start="COND">Conditioning</button></div></div>';
     var ph = dy.phase, pst = phaseStatus(ph);
     h += '<div class="card"><div class="between"><div class="eyebrow">Phase ' + ph.n + ' gate</div><span class="small muted">' + pst.done + ' of ' + ph.of + ' · need ' + ph.gate + '</span></div><div class="bar"><i style="width:' + Math.min(100, pst.done / ph.gate * 100) + '%"></i></div><p class="small muted mb0">Gate on ' + esc(P.fmt(P.isoDn(pst.range.to))) + '. Miss it and you repeat the last 2 weeks of the phase.</p></div>';
@@ -234,13 +235,16 @@
     h += tick('steps', 'Steps ' + t.steps.toLocaleString('en').replace(',', ' '), 'Phone or watch count');
     h += tick('protein', 'Protein ' + t.protein + ' g', 'About 4 palm-sized portions');
     if (t.kcal) h += tick('kcal', 'Calories ≤ ' + t.kcal.toLocaleString('en').replace(',', ' '), 'Adjust every 2 weeks by the 7-day average');
-    else h += '<div class="tick"><div><div class="t">No calorie counting</div><div class="s">' + (dy.kind === 'xmas' ? 'Holiday weeks: protein only' : 'Phase 1: protein and steps are enough') + '</div></div></div>';
+    else h += '<div class="tick"><div><div class="t">No calorie counting</div><div class="s">' + (dy.kind === 'xmas' ? 'Holiday weeks: protein only' : (P.NO_KCAL_TEXT || 'Protein and steps only')) + '</div></div></div>';
     h += tick('sleep', 'Slept 7 h+', 'Tap twice for “no”');
     h += '<div class="tick"><div><div class="t">Body weight' + (t.weighIn ? ' <span class="pill acc" style="margin-left:4px">weigh-in day</span>' : '') + '</div><div class="s">Morning, after the toilet</div></div><input class="wt" inputmode="decimal" placeholder="kg" data-weight value="' + (d.weight ? kg(d.weight) : '') + '"></div>';
     return h + '</div></div>';
   }
 
+  function isIOS() { return /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
+  function standalone() { return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true; }
   function installCard() {
+    if (!deferredInstall && isIOS() && !standalone()) return '<div class="card"><h2>Install Lift on iPhone</h2><p class="small muted">Open this page in <b>Safari</b>, tap the <b>Share</b> button (square with an arrow), then <b>Add to Home Screen</b>. Open Lift from the home-screen icon from then on: that copy works with no signal and keeps your log.</p></div>';
     if (!deferredInstall) return '';
     return '<div class="card"><h2>Install Lift</h2><p class="small muted">Adds it to your home screen and lets it run with no signal.</p><button class="btn ghost" data-install>Install app</button></div>';
   }
@@ -293,7 +297,7 @@
     var h = '<div class="sess-head"><div class="between"><a href="#/day/' + D.date + '" style="color:var(--muted);text-decoration:none;font-size:.9rem">‹ ' + esc(P.fmt(D.date)) + '</a><span class="pill acc" id="elapsed">0:00</span></div><h1 style="margin-top:6px">' + esc(D.title) + '</h1>' +
       (D.note ? '<div class="small" style="color:var(--warn);margin-top:4px">' + esc(D.note) + '</div>' : '') + '</div>';
     if (D.code === 'COND') {
-      h += '<div class="card"><label class="eyebrow">What did you do?</label><textarea id="condTxt" rows="3" placeholder="e.g. Stadium stairs 8 rounds, 25 min">' + esc(D.notes) + '</textarea><p class="small muted">Optional conditioning does not count toward the 4 sessions.</p></div>';
+      h += '<div class="card"><label class="eyebrow">What did you do?</label><textarea id="condTxt" rows="3" placeholder="e.g. Stadium stairs 8 rounds, 25 min">' + esc(D.notes) + '</textarea><p class="small muted">Optional conditioning does not count toward your ' + (P.PER_WEEK || 4) + ' weekly sessions.</p></div>';
     }
     D.items.forEach(function (it, ii) {
       var allDone = it.rows.length && it.rows.every(function (r) { return r.done; });
@@ -395,6 +399,7 @@
   function beep() {
     try { if (audioCtx) [0, 0.22, 0.44].forEach(function (t) { var o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination); o.frequency.value = 880; var s = audioCtx.currentTime + t; g.gain.setValueAtTime(0.0001, s); g.gain.exponentialRampToValueAtTime(0.35, s + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, s + 0.18); o.start(s); o.stop(s + 0.2); }); } catch (e) {}
     if (navigator.vibrate) navigator.vibrate([300, 120, 300, 120, 300]);
+    else { document.body.classList.remove('flash'); void document.body.offsetWidth; document.body.classList.add('flash'); setTimeout(function () { document.body.classList.remove('flash'); }, 1600); } // iPhone: no vibration from web apps, so flash the screen
   }
   function startRest(sec) { restEnd = Date.now() + sec * 1000; document.getElementById('rest').className = 'show'; drawRest(); clearInterval(restT); restT = setInterval(drawRest, 250); }
   function stopRest() { clearInterval(restT); restT = null; document.getElementById('rest').className = ''; }
@@ -419,8 +424,8 @@
 
   // ---------------- Plan view ----------------
   function renderPlan() {
-    var t = today(), curW = P.weekOf(P.dnISO(t)), h = '<div class="top"><div><div class="eyebrow">2 Nov 2026 – 18 Jun 2027</div><h1>Daily plan</h1></div></div>';
-    h += '<p class="small muted" style="margin-top:0">Tap any day for its full session, weights and targets. A/B gym, C/D home. + = spare slot.</p>';
+    var t = today(), curW = P.weekOf(P.dnISO(t)), h = '<div class="top"><div><div class="eyebrow">' + esc(P.fmt(P.isoDn(P.START), false) + ' ' + P.isoDn(P.START).slice(0, 4) + ' – ' + P.fmt(P.isoDn(P.END), false) + ' ' + P.isoDn(P.END).slice(0, 4)) + '</div><h1>Daily plan</h1></div></div>';
+    h += '<p class="small muted" style="margin-top:0">Tap any day for its full session, weights and targets. ' + esc(P.LEGEND || '') + '</p>';
     P.PHASES.forEach(function (ph) {
       var pst = phaseStatus(ph);
       h += '<div class="ph between"><h2>Phase ' + ph.n + ' · ' + esc(ph.name) + '</h2><span class="small muted">' + pst.done + '/' + ph.gate + ' to pass</span></div>';
@@ -457,7 +462,7 @@
     h += '<div class="card"><h2>Body</h2><p class="mb0" style="margin-top:6px">' + (av ? '7-day average: <b>' + kg(Math.round(av.avg * 10) / 10) + ' kg</b> <span class="muted small">(' + av.n + ' weigh-ins)</span>' : '<span class="muted">No weigh-ins this week yet. Log them on the Today screen.</span>') + '</p>' +
       (waists.length ? '<p class="small muted mb0">Waist: ' + waists.map(function (k) { return P.fmt(k, false) + ' ' + kg(S.daily[k].waist) + ' cm'; }).join(' · ') + '</p>' : '') + '</div>';
     // best lifts
-    var keys = ['squat', 'bench', 'deadlift', 'ohp', 'rdl', 'row', 'pulldown'], bests = [];
+    var keys = P.BEST_KEYS || ['squat', 'bench', 'deadlift', 'ohp', 'rdl', 'row', 'pulldown'], bests = [];
     keys.forEach(function (k) { var b = bestWorking(k, '9999-12-31'); if (b) bests.push(EX[k].name + ' <b>' + kg(b) + ' kg</b>'); });
     if (bests.length) h += '<div class="card"><h2>Best working weights</h2><p class="small mb0" style="margin-top:6px">' + bests.join('<br>') + '</p></div>';
     var ls = logsSorted();
@@ -480,8 +485,8 @@
   }
 
   function exportLog() {
-    var data = { app: 'Lift', version: VERSION, exportedAt: new Date().toISOString(), plan: '8-Month Plan 2 Nov 2026 - 18 Jun 2027', logs: S.logs, daily: S.daily };
-    var json = JSON.stringify(data, null, 1), name = 'lift-log-' + today() + '.json';
+    var data = { app: 'Lift', version: VERSION, exportedAt: new Date().toISOString(), plan: P.PLAN_NAME || '8-Month Plan', profile: P.WHO || 'nuwan', logs: S.logs, daily: S.daily };
+    var json = JSON.stringify(data, null, 1), name = 'lift-' + (P.WHO && P.WHO !== 'nuwan' ? P.WHO + '-' : '') + 'log-' + today() + '.json';
     var file; try { file = new File([json], name, { type: 'application/json' }); } catch (e) {}
     var done = function () { S.meta.lastExport = new Date().toISOString(); save(); renderLog(); };
     if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
