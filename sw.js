@@ -1,6 +1,6 @@
 /* Lift service worker: cache-first, so the app opens with zero signal. Bump VERSION to ship an update. */
-var VERSION = 'lift-1.5.0';
-var FILES = ['./', 'index.html', 'app.js', 'plan.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png'];
+var VERSION = 'lift-1.6.0';
+var FILES = ['./', 'index.html', 'app.js', 'plan.js', 'figures.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png'];
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(VERSION).then(function (c) { return c.addAll(FILES); }).then(function () { return self.skipWaiting(); }));
 });

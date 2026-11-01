@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var P = window.Plan, EX = P.EX;
-  var VERSION = '1.5.0';
+  var VERSION = '1.6.0';
   var KEY = P.KEY || 'lift.v1';
   var $app = document.getElementById('app');
 
@@ -301,8 +301,14 @@
     }
     D.items.forEach(function (it, ii) {
       var allDone = it.rows.length && it.rows.every(function (r) { return r.done; });
-      h += '<div class="ex' + (allDone ? ' alldone' : '') + '" id="ex' + ii + '"><div class="between" style="align-items:flex-start"><div><h3>' + esc(it.name) + (it.optional ? ' <span class="muted small">(optional)</span>' : '') + '</h3><div class="tgt">' + esc(it.target) + (it.rows[0] && it.rows[0].pw ? ' · ' + esc(it.rows[0].pw) + ' kg' : '') + '</div></div>' +
-        (it.finisher ? '<span class="pill">Finisher</span>' : '') + '</div>';
+      var FG = window.Figures, hasFig = FG && FG.has(it.k), open = hasFig && openFig[ii];
+      h += '<div class="ex' + (allDone ? ' alldone' : '') + '" id="ex' + ii + '"><div class="row" style="align-items:flex-start">' +
+        (hasFig ? '<button class="figbtn" data-fig="' + ii + '" aria-expanded="' + (open ? 'true' : 'false') + '" aria-label="How to do ' + esc(it.name) + '">' + FG.svg(it.k, 'thumb') + '</button>' : '') +
+        '<div style="flex:1;min-width:0"><div class="between" style="align-items:flex-start"><div><h3>' + esc(it.name) + (it.optional ? ' <span class="muted small">(optional)</span>' : '') + '</h3><div class="tgt">' + esc(it.target) + (it.rows[0] && it.rows[0].pw ? ' · ' + esc(it.rows[0].pw) + ' kg' : '') + '</div></div>' +
+        (it.finisher ? '<span class="pill">Finisher</span>' : '') + '</div>' + (hasFig && !open ? '<div class="small muted" style="margin-top:2px">Tap the picture for how to do it</div>' : '') + '</div></div>';
+      if (open) { var mu = FG.muscles(it.k);
+        h += '<div class="howto">' + FG.svg(it.k, 'full') + '<ol>' + FG.cues(it.k).map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') + '</ol>' +
+          FG.svg(it.k, 'muscles') + '<div class="mkey"><span><i></i><b>Main:</b> ' + esc(mu.main.join(', ')) + '</span>' + (mu.also.length ? '<span><i class="s"></i>Also: ' + esc(mu.also.join(', ')) + '</span>' : '') + '</div></div>'; }
       if (it.note) h += '<div class="hint">' + esc(it.note) + '</div>';
       if (it.last) h += '<div class="hint">' + it.last + '</div>';
       if (it.hint) h += '<div class="hint' + (it.up ? ' up' : '') + '">' + esc(it.hint) + '</div>';
@@ -333,8 +339,10 @@
     keepAwake(true);
   }
 
+  var openFig = {};
   function bindSession() {
     var D = S.draft;
+    $app.querySelectorAll('[data-fig]').forEach(function (b) { b.onclick = function () { var i = b.getAttribute('data-fig'); openFig[i] = !openFig[i]; var y = window.scrollY; renderSession(); window.scrollTo(0, y); }; });
     $app.querySelectorAll('input[data-f]').forEach(function (inp) {
       inp.oninput = function () { var p = inp.getAttribute('data-i').split(':'), row = D.items[+p[0]].rows[+p[1]]; row[inp.getAttribute('data-f')] = inp.value; save(); };
     });
