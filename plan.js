@@ -77,8 +77,21 @@
     stairs: { name: 'Stadium stairs or 100 m strides', kind: 'rounds' },
     floor: { name: 'Goblet squat 12 · push-up 10 · DB row 10/side · DB RDL 12 · plank 30 s', kind: 'rounds' },
     run: { name: '1,600 m (4 stadium laps)', kind: 'time' },
-    waist: { name: 'Waist at navel', kind: 'measure' }
+    waist: { name: 'Waist at navel', kind: 'measure' },
+    // Rotation partners (alternate every 4 weeks from Week 3). seed = first-time weight from the partner's last log x ratio.
+    stepup: { name: 'Dumbbell step-up (knee-high box)', kind: 'db', inc: 2, start: 0, seed: { k: 'lunge', x: 1 } },
+    pulldown_cg: { name: 'Close-grip lat pulldown', kind: 'cable', inc: 2.5, start: 27, seed: { k: 'pulldown', x: 1 } },
+    goblet_hu: { name: 'Heels-up goblet squat (heels on a plate)', kind: 'db', inc: 2, start: 8, seed: { k: 'goblet', x: 1 } },
+    arnold: { name: 'Arnold press (standing)', kind: 'db', inc: 2, start: 8, perHand: true, seed: { k: 'dbsp', x: 0.85 } },
+    // Arms, Day D from Week 3 (superset)
+    curl: { name: 'Dumbbell curl', kind: 'db', inc: 2, start: null, perHand: true },
+    ohext: { name: 'Overhead triceps extension (one DB, two hands)', kind: 'db', inc: 2, start: null }
   };
+  var ROTATE = { lunge: 'stepup', pulldown: 'pulldown_cg', goblet: 'goblet_hu', dbsp: 'arnold' };
+  // 0 = original exercises, 1 = rotation partners. Weeks 1-6 original, then flip every 4 weeks (7-10 partners, 11-14 original, ...).
+  function variant(w) { return w < 3 ? 0 : Math.floor((w - 3) / 4) % 2; }
+  // Second half of each phase: +1 set on the day's first 3-set accessory.
+  function secondHalf(w) { var ph = phaseOfWeek(w); return w >= ph.from + Math.ceil((ph.to - ph.from + 1) / 2); }
 
   function parseReps(r) {
     var m = String(r).match(/(\d+)(?:-(\d+))?/);
@@ -95,6 +108,18 @@
   var DTP_REPS = [50, 40, 30, 20, 10];
 
   function baseSession(code, w) {
+    var list = coreSession(code, w), p = phaseOfWeek(w).n;
+    if (variant(w) === 1) list = list.map(function (it) {
+      var to = ROTATE[it.k]; if (!to || it.from != null || (it.k === 'goblet' && p > 2)) return it;
+      var c = clone(it); c.k = to; c.name = EX[to].name; c.rotated = true; return c; });
+    if (secondHalf(w)) for (var i = 0; i < list.length; i++) {
+      var it = list[i], kd = EX[it.k].kind;
+      if (!MAIN[it.k] && !it.finisher && it.sets === 3 && (kd === 'bb' || kd === 'db' || kd === 'cable' || kd === 'machine')) {
+        var c2 = clone(it); c2.sets = 4; c2.note = (c2.note ? c2.note + ' · ' : '') + '+1 set: second half of the phase'; list[i] = c2; break; }
+    }
+    return list;
+  }
+  function coreSession(code, w) {
     var p = phaseOfWeek(w).n, early = w <= 2;
     if (code === 'A') {
       if (p === 1) return early
@@ -132,6 +157,12 @@
       var list = (p === 1 && early)
         ? [I('dbpress', 3, 12), I('dbrow', 3, '12/side'), I('dbsp', 3, 10), I('pullapart', 2, 15), I('core', 2, 'round')]
         : [I('dbpress', 4, '10-12', slow), I('dbrow', 4, '10-12/side', slow), I('dbsp', 3, '10-12', slow), I('pullapart', 3, '15-20'), I('core', 3, 'round')];
+      if (w >= 3) {
+        var at = list.map(function (it) { return it.k; }).indexOf('pullapart');
+        list.splice(at, 0, I('curl', 3, '10-12', { note: 'Superset with the extension: curl, extension, 60 s rest. First time: a weight you can do 12 with, 2 left.' }),
+          I('ohext', 3, '10-12', { note: 'Superset with the curl' }));
+        list[at + 2] = clone(list[at + 2]); list[at + 2].note = 'Superset with the core work: alternate, no rest between';
+      }
       if (p === 4) list.push(I('dtp_db', 5, '50-10', { dtp: DTP_REPS, rest: 45, finisher: true, note: 'Rows or presses. 45 s rest.' }));
       return list;
     }
@@ -223,7 +254,7 @@
   var Plan = {
     pad: pad, dnISO: dnISO, isoDn: isoDn, todayISO: todayISO, dow: dow, fmt: fmt, DOW: DOW, MON: MON,
     START: START, END: END, WEEKS: WEEKS, WEEK1_MON: WEEK1_MON, PHASES: PHASES, EX: EX, TITLES: TITLES, KIND_LABEL: KIND_LABEL,
-    weekOf: weekOf, weekMon: weekMon, phaseOfWeek: phaseOfWeek, phaseRange: phaseRange, weekKind: weekKind,
+    weekOf: weekOf, weekMon: weekMon, variant: variant, secondHalf: secondHalf, ROTATE: ROTATE, phaseOfWeek: phaseOfWeek, phaseRange: phaseRange, weekKind: weekKind,
     slots: slots, required: required, session: session, day: day, parseReps: parseReps
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = Plan; else G.Plan = Plan;

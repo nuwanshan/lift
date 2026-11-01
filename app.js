@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var P = window.Plan, EX = P.EX;
-  var VERSION = '1.1.0';
+  var VERSION = '1.2.0';
   var KEY = 'lift.v1';
   var $app = document.getElementById('app');
 
@@ -68,6 +68,8 @@
         if (ex.kind === 'db') { out.w = last.top; out.hint = 'Every set hit ' + last.hi + ' last time: go up one dumbbell step.'; out.up = true; }
         else { out.w = last.top + ex.inc; out.hint = 'Every set hit ' + last.hi + ' last time: +' + kg(ex.inc) + ' kg.'; out.up = true; }
       } else { out.w = last.top; if (item.hi) out.hint = 'Same weight until every set reaches ' + item.hi + '.'; }
+    } else if (ex.seed && lastWorking(ex.seed.k, date) && lastWorking(ex.seed.k, date).top) {
+      out.w = roundTo(lastWorking(ex.seed.k, date).top * ex.seed.x, stepFor(ex.kind)); out.hint = 'New this block: start from your ' + EX[ex.seed.k].name.toLowerCase() + ' weight.';
     } else if (ex.start != null) out.w = ex.start;
     if (item.ofBest) { var b = bestWorking(item.k, date); if (b) out.w = b; }
     if (item.factor && out.w) { out.w = roundTo(out.w * item.factor, stepFor(ex.kind)); out.hint = Math.round(item.factor * 100) + '% of your working weight.'; out.up = false; }
