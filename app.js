@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var P = window.Plan, EX = P.EX;
-  var VERSION = '1.0.0';
+  var VERSION = '1.1.0';
   var KEY = 'lift.v1';
   var $app = document.getElementById('app');
 
@@ -149,17 +149,17 @@
   function renderDay(iso) {
     var t = today(), isToday = iso === t, dy = P.day(iso), h = '';
     var w = dy.week, inRange = w >= 1 && w <= P.WEEKS;
-    h += '<div class="top"><div><div class="eyebrow">' + (isToday ? 'Today · ' : '') + (dy.inPlan ? 'Week ' + w + ' of 34 · Phase ' + dy.phase.n + ' ' + esc(dy.phase.name) : (dy.type === 'before' ? 'Before the plan' : 'After the plan')) + '</div><h1>' + esc(P.fmt(iso)) + '</h1></div>';
+    h += '<div class="top"><div><div class="eyebrow">' + (isToday ? 'Today · ' : '') + (dy.inPlan ? 'Week ' + w + ' of ' + P.WEEKS + ' · Phase ' + dy.phase.n + ' ' + esc(dy.phase.name) : (dy.type === 'before' ? 'Before the plan' : 'After the plan')) + '</div><h1>' + esc(P.fmt(iso)) + '</h1></div>';
     h += '<div class="row nav2">' + (P.dnISO(iso) > P.START - 2 ? '<a href="#/day/' + addDays(iso, -1) + '" aria-label="Previous day">‹</a>' : '') + '<a href="#/day/' + addDays(iso, 1) + '" aria-label="Next day">›</a></div></div>';
     if (!isToday) h += '<p class="mb0" style="margin-top:-4px"><a href="#/today" style="color:var(--accent);font-size:.9rem">← Back to today</a></p>';
     if (inRange) h += weekStrip(w, iso);
     if (S.draft) h += '<div class="banner warn"><b>Session in progress:</b> ' + esc(S.draft.title) + ' (' + esc(P.fmt(S.draft.date)) + '). <a href="#/session" style="color:inherit;font-weight:700">Resume →</a></div>';
 
     if (dy.type === 'before') {
-      var first = P.day('2026-10-21');
-      h += '<div class="card hero"><div class="eyebrow">Plan starts Wed 21 Oct</div><h2 class="mt">' + esc(first.label) + ' · Gym</h2>' + sessionPreview('A', '2026-10-21') +
-        '<a class="btn ghost" href="#/day/2026-10-21">Open Wed 21 Oct</a></div>';
-      h += '<div class="banner info">Week 1 is short: Wed A (gym), Fri B (gym), Sat C (home). Normal Mon-Sun weeks from 26 Oct. Measure your waist at the navel on the first morning.</div>';
+      var first = P.day('2026-11-02');
+      h += '<div class="card hero"><div class="eyebrow">Plan starts Mon 2 Nov</div><h2 class="mt">' + esc(first.label) + ' · Gym</h2>' + sessionPreview('A', '2026-11-02') +
+        '<a class="btn ghost" href="#/day/2026-11-02">Open Mon 2 Nov</a></div>';
+      h += '<div class="banner info">Week 1: Mon A (gym), Tue B (gym), Thu C (home), Fri D (home), Sat 7 Nov 1,600 m baseline at the stadium. Measure your waist at the navel on the first morning. First week back after being sick: easy Week 1 sessions, stop a set if it turns into a grind.</div>';
       $app.innerHTML = h + installCard(); return bindDay(iso);
     }
     if (dy.type === 'after') { $app.innerHTML = h + '<div class="card"><h2>Plan complete</h2><p class="muted">Export your log from Progress and bring it to Claude to build the next plan.</p></div>'; return bindDay(iso); }
@@ -415,7 +415,7 @@
 
   // ---------------- Plan view ----------------
   function renderPlan() {
-    var t = today(), curW = P.weekOf(P.dnISO(t)), h = '<div class="top"><div><div class="eyebrow">21 Oct 2026 – 13 Jun 2027</div><h1>Daily plan</h1></div></div>';
+    var t = today(), curW = P.weekOf(P.dnISO(t)), h = '<div class="top"><div><div class="eyebrow">2 Nov 2026 – 18 Jun 2027</div><h1>Daily plan</h1></div></div>';
     h += '<p class="small muted" style="margin-top:0">Tap any day for its full session, weights and targets. A/B gym, C/D home. + = spare slot.</p>';
     P.PHASES.forEach(function (ph) {
       var pst = phaseStatus(ph);
@@ -423,7 +423,7 @@
       for (var w = ph.from; w <= ph.to; w++) {
         var mon = P.weekMon(w), kind = P.weekKind(w), ws = weekStatus(w, t);
         h += '<div class="wk' + (w === curW ? ' cur' : '') + '" id="wk' + w + '"><div class="wh"><b>Week ' + w + ' · ' + P.fmt(P.isoDn(mon), false) + ' – ' + P.fmt(P.isoDn(mon + 6), false) + '</b><span class="muted">' +
-          [(kind === 'xmas' ? 'Christmas' : kind === 'deload' ? 'Deload' : kind === 'taper' ? 'Taper' : kind === 'test' ? 'Test' : w === 1 ? 'Short week' : ''), (P.dnISO(t) >= mon ? ws.done + '/' + ws.req : '')].filter(Boolean).join(' · ') + '</span></div><div class="days">';
+          [(kind === 'xmas' ? 'Christmas' : kind === 'deload' ? 'Deload' : kind === 'taper' ? 'Taper' : kind === 'test' ? 'Test' : ''), (P.dnISO(t) >= mon ? ws.done + '/' + ws.req : '')].filter(Boolean).join(' · ') + '</span></div><div class="days">';
         for (var i = 0; i < 7; i++) {
           var n = mon + i, iso = P.isoDn(n), dy = P.day(iso);
           if (n < P.START) { h += '<a class="x">·</a>'; continue; }
@@ -436,7 +436,7 @@
       h += '<p class="small muted">Gate ' + esc(P.fmt(P.isoDn(pst.range.to))) + ': ' + ph.gate + ' of ' + ph.of + ' sessions. Steps ' + ph.steps.toLocaleString('en') + ' · protein ' + ph.protein + ' g' + (ph.kcal ? ' · ' + ph.kcal.toLocaleString('en') + ' kcal' : ' · no calorie counting') + '.</p>';
     });
     $app.innerHTML = h;
-    var cur = document.getElementById('wk' + Math.max(1, Math.min(34, curW)));
+    var cur = document.getElementById('wk' + Math.max(1, Math.min(P.WEEKS, curW)));
     if (cur && curW > 2) setTimeout(function () { cur.scrollIntoView({ block: 'center' }); }, 30);
   }
 
@@ -476,7 +476,7 @@
   }
 
   function exportLog() {
-    var data = { app: 'Lift', version: VERSION, exportedAt: new Date().toISOString(), plan: '8-Month Plan 21 Oct 2026 - 13 Jun 2027', logs: S.logs, daily: S.daily };
+    var data = { app: 'Lift', version: VERSION, exportedAt: new Date().toISOString(), plan: '8-Month Plan 2 Nov 2026 - 18 Jun 2027', logs: S.logs, daily: S.daily };
     var json = JSON.stringify(data, null, 1), name = 'lift-log-' + today() + '.json';
     var file; try { file = new File([json], name, { type: 'application/json' }); } catch (e) {}
     var done = function () { S.meta.lastExport = new Date().toISOString(); save(); renderLog(); };

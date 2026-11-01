@@ -18,27 +18,28 @@
     return (withDow === false ? '' : DOW[dow(n)] + ' ') + d.getUTCDate() + ' ' + MON[d.getUTCMonth()];
   }
 
-  var WEEK1_MON = dnISO('2026-10-19');
-  var START = dnISO('2026-10-21');           // Wed — plan day 1
-  var END = dnISO('2027-06-13');             // Sun — end of Week 34
-  var WEEKS = 34;
+  // Restarted 1 Nov 2026 after illness: Week 1 = Mon 2 Nov, final test Fri 18 Jun 2027 (Week 33).
+  var WEEK1_MON = dnISO('2026-11-02');
+  var START = WEEK1_MON;                     // Mon — plan day 1
+  var END = dnISO('2027-06-18');             // Fri — final test day, Week 33
+  var WEEKS = 33;
 
   var PHASES = [
-    { n: 1, name: 'Restart', from: 1, to: 6, gate: 19, of: 23, steps: 7000, protein: 150, kcal: null },
+    { n: 1, name: 'Restart', from: 1, to: 6, gate: 20, of: 24, steps: 7000, protein: 150, kcal: null },
     { n: 2, name: 'Build', from: 7, to: 14, gate: 23, of: 28, steps: 8000, protein: 160, kcal: 2200 },
     { n: 3, name: 'Strength', from: 15, to: 23, gate: 29, of: 36, steps: 8000, protein: 160, kcal: 2200 },
-    { n: 4, name: 'Peak & lean', from: 24, to: 34, gate: 36, of: 44, steps: 10000, protein: 160, kcal: 2100 }
+    { n: 4, name: 'Peak & lean', from: 24, to: 33, gate: 32, of: 40, steps: 10000, protein: 160, kcal: 2100 }
   ];
   function phaseOfWeek(w) { for (var i = 0; i < PHASES.length; i++) if (w >= PHASES[i].from && w <= PHASES[i].to) return PHASES[i]; return null; }
   function weekOf(n) { return Math.floor((n - WEEK1_MON) / 7) + 1; }
   function weekMon(w) { return WEEK1_MON + (w - 1) * 7; }
-  function phaseRange(p) { return { from: Math.max(START, weekMon(p.from)), to: weekMon(p.to) + 6 }; }
+  function phaseRange(p) { return { from: Math.max(START, weekMon(p.from)), to: Math.min(END, weekMon(p.to) + 6) }; }
 
   function weekKind(w) {
-    if (w === 10 || w === 11) return 'xmas';
-    if (w === 19 || w === 23 || w === 29) return 'deload';
-    if (w === 33) return 'taper';
-    if (w === 34) return 'test';
+    if (w === 8 || w === 9) return 'xmas';              // 21 Dec – 3 Jan
+    if (w === 17 || w === 21 || w === 28) return 'deload'; // 22 Feb, Easter 22 Mar, 10 May
+    if (w === 32) return 'taper';                        // 7–13 Jun
+    if (w === 33) return 'test';                         // 14–18 Jun
     return 'normal';
   }
   var KIND_LABEL = { xmas: 'Christmas week: 2 sessions minimum, ~70% weights', deload: 'Deload week: 60% weights, half the sets', taper: 'Taper week: main lifts 3 x 3 at ~90%', test: 'Test week', normal: '' };
@@ -186,27 +187,26 @@
   // ---------------- Calendar ----------------
   // Scheduled session slots for a week: [{dow, code}]
   function slots(w) {
-    if (w === 1) return [{ dow: 2, code: 'A' }, { dow: 4, code: 'B' }, { dow: 5, code: 'C' }];
-    if (w === 34) return [{ dow: 0, code: 'T1' }, { dow: 1, code: 'T2' }, { dow: 3, code: 'T3' }, { dow: 5, code: 'T4' }];
+    if (w === 33) return [{ dow: 0, code: 'T1' }, { dow: 1, code: 'T2' }, { dow: 3, code: 'T3' }, { dow: 4, code: 'T4' }];
     return [{ dow: 0, code: 'A' }, { dow: 1, code: 'B' }, { dow: 3, code: 'C' }, { dow: 4, code: 'D' }];
   }
   function required(w) { return weekKind(w) === 'xmas' ? 2 : slots(w).length; }
 
   var SPECIAL = {
-    '2026-10-21': { tag: 'Start', text: 'Day 1. Measure your waist at the navel this morning.' },
-    '2026-10-31': { code: 'RUN', tag: 'Baseline', text: '1,600 m baseline: 4 stadium laps, walk breaks allowed, record the time.' },
-    '2026-11-29': { tag: 'Gate 1', text: 'Phase 1 gate: 19 of 23 sessions logged. Measure waist + 7-day average weight.' },
-    '2027-01-24': { tag: 'Gate 2', text: 'Phase 2 gate: 23 of 28 sessions. Measure waist + 7-day average weight.' },
-    '2027-03-27': { code: 'RUN', tag: 'Retest', text: '1,600 m retest. Target: 8% faster than the baseline.' },
-    '2027-03-28': { tag: 'Gate 3', text: 'Phase 3 gate: 29 of 36 sessions. Measure waist + 7-day average weight.' },
-    '2027-06-13': { tag: 'Final', text: 'Final gate: 36 of 44 sessions. Fill in the Test week column of the targets table.' }
+    '2026-11-02': { tag: 'Start', text: 'Day 1. Measure your waist at the navel this morning. First week back after being sick: if a set feels like a grind, stop it there.' },
+    '2026-11-07': { code: 'RUN', tag: 'Baseline', text: '1,600 m baseline: 4 stadium laps, walk breaks allowed, record the time.' },
+    '2026-12-13': { tag: 'Gate 1', text: 'Phase 1 gate: 20 of 24 sessions logged. Measure waist + 7-day average weight.' },
+    '2027-02-07': { tag: 'Gate 2', text: 'Phase 2 gate: 23 of 28 sessions. Measure waist + 7-day average weight.' },
+    '2027-04-10': { code: 'RUN', tag: 'Retest', text: '1,600 m retest. Target: 8% faster than the baseline.' },
+    '2027-04-11': { tag: 'Gate 3', text: 'Phase 3 gate: 29 of 36 sessions. Measure waist + 7-day average weight.' },
+    '2027-06-18': { tag: 'Final', text: 'Final gate: 32 of 40 sessions. Fill in the Test week column of the targets table.' }
   };
 
   // What a calendar day holds
   function day(iso) {
     var n = dnISO(iso), w = weekOf(n), d = dow(n);
     var out = { iso: iso, n: n, dow: d, week: w, inPlan: n >= START && n <= END };
-    if (n < START) { out.type = 'before'; out.label = 'Plan starts Wed 21 Oct'; return out; }
+    if (n < START) { out.type = 'before'; out.label = 'Plan starts Mon 2 Nov'; return out; }
     if (n > END) { out.type = 'after'; out.label = 'Plan complete'; return out; }
     var ph = phaseOfWeek(w); out.phase = ph; out.kind = weekKind(w);
     out.targets = { steps: ph.steps, protein: ph.protein, kcal: out.kind === 'xmas' ? null : ph.kcal, weighIn: d === 0 || d === 2 || d === 4 };
@@ -215,8 +215,8 @@
     if (s) { out.type = 'session'; out.code = s.code; out.label = TITLES[s.code]; out.optional = out.kind === 'xmas'; return out; }
     if (sp && sp.code) { out.type = 'extra'; out.code = sp.code; out.label = TITLES[sp.code]; return out; }
     if (d === 6) { out.type = 'rest'; out.label = 'Full rest'; return out; }
-    if (d === 5 && w !== 1 && w !== 34) { out.type = 'spare'; out.label = 'Spare slot: make-up or optional conditioning'; return out; }
-    if (d === 2 && w !== 1) { out.type = 'rest'; out.label = 'Rest, or an easy 20-30 min walk'; return out; }
+    if (d === 5 && w !== 33) { out.type = 'spare'; out.label = 'Spare slot: make-up or optional conditioning'; return out; }
+    if (d === 2) { out.type = 'rest'; out.label = 'Rest, or an easy 20-30 min walk'; return out; }
     out.type = 'rest'; out.label = 'Rest'; return out;
   }
 
