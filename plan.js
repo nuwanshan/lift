@@ -127,10 +127,10 @@
         : [I('squat', 4, '6-8'), I('rdl', 3, '8-10'), I('lunge', 3, '10/leg'), I('legpress', 3, '10-12'), I('calf', 3, '12-15')];
       if (p === 2) return [I('squat', 4, '5-6', { note: 'Heavier than Phase 1' }), I('deadlift', 3, 5, { note: 'Replaces the RDL. Same setup every rep: bar over midfoot, shins to bar, brace, push the floor away. +5 kg only when all 15 reps are clean.' }), I('lunge', 3, '10/leg'), I('calf', 3, '12-15'),
         I('dtp_lp', 5, '50-10', { dtp: DTP_REPS, rest: 45, finisher: true, note: '45 s rest. A weight you can do 50 with; rest-pausing = too heavy.' })];
-      if (p === 3) return [I('squat', 5, 5, { from: 75, note: '+2.5 kg/week only if all 25 reps clean' }), I('deadlift', 3, 5, { note: 'Carries on from Phase 2. +5 kg only when all 15 reps are clean.' }),
+      if (p === 3) return [I('squat', 5, 5, { inc: 2.5, note: 'Carries on from Phase 2. +2.5 kg only when all 25 reps are clean.' }), I('deadlift', 3, 5, { note: 'Carries on from Phase 2. +5 kg only when all 15 reps are clean.' }),
         I('lunge', 3, '8/leg', { note: 'Dumbbells' }), I('legcurl', 3, 10), I('calf', 3, 12),
         I('dtp_lp', 5, '50-10', { dtp: DTP_REPS, rest: 45, finisher: true, optional: true, note: 'Only if you are under 45 min.' })];
-      return [I('squat', 4, '4-5'), I('deadlift', 3, '3-5'), I('lunge', 3, '8/leg'), I('calf', 3, 12)];
+      return [I('squat', 4, '4-5', { inc: 2.5 }), I('deadlift', 3, '3-5'), I('lunge', 3, '8/leg'), I('calf', 3, 12)];
     }
     if (code === 'B') {
       if (p === 1) return early
@@ -138,7 +138,7 @@
         : [I('bench', 4, '6-8'), I('pulldown', 4, '8-10'), I('row', 3, '10-12'), I('ohp', 3, '8-10'), I('facepull', 3, 15)];
       if (p === 2) return [I('bench', 4, '5-6'), I('pulldown', 4, '8-10'), I('negatives', 3, 1, { note: 'Jump up, lower over 5 s' }),
         I('row', 3, '10-12'), I('ohp', 3, '8-10'), I('facepull', 3, 15)];
-      if (p === 3) return [I('bench', 5, 5, { from: 60, note: '+2.5 kg/week only if all 25 reps clean' }), I('pullup', 4, 'max', { note: 'Band-assisted to reach 5' }),
+      if (p === 3) return [I('bench', 5, 5, { note: 'Carries on from Phase 2. +2.5 kg only when all 25 reps are clean.' }), I('pullup', 4, 'max', { note: 'Band-assisted to reach 5' }),
         I('row', 3, '8-10'), I('ohp', 4, 6), I('facepull', 3, 15)];
       return [I('bench', 4, '4-5'), I('pullup', 5, 'max', { note: 'Strict only once you have 5' }), I('ohp', 4, 5), I('row', 3, '8-10'), I('facepull', 3, 15)];
     }
@@ -148,7 +148,7 @@
         : [I('goblet', 4, '10-12'), I('dbrdl', 3, '10-12'), I('bss', 3, '8-10/leg'), I('carry', 4, '40 m'), I('tire', 3, '5-8')];
       if (p === 2) return [I('goblet', 4, '10-12'), I('dbrdl', 3, '10-12'), I('bss', 3, '8-10/leg'), I('carry', 4, '40 m', { note: 'Load toward 30-40 kg' }),
         I('emom', 8, 'round', { finisher: true, note: 'Odd minutes 3 flips, even minutes 20 m carry' })];
-      if (p === 3) return [I('goblet', 4, 10, { from: 24, note: '3 s lowering' }), I('dbrdl', 3, '8-10', { note: '3 s lowering, hamstrings and glutes' }), I('bss', 3, '8/leg', { note: 'Dumbbells' }), I('carry', 4, '40 m', { from: 40 }), I('tire', 3, 6)];
+      if (p === 3) return [I('goblet', 4, 10, { note: '3 s lowering. Build toward 24 kg.' }), I('dbrdl', 3, '8-10', { note: '3 s lowering, hamstrings and glutes' }), I('bss', 3, '8/leg', { note: 'Dumbbells' }), I('carry', 4, '40 m', { note: 'Build toward 40 kg' }), I('tire', 3, 6)];
       return [I('goblet', 3, 10, { note: 'Stadium: 15 min strength first' }), I('dbrdl', 3, 10, { note: 'Hamstrings and glutes' }), I('carry', 3, '40 m'),
         I('stairs', 10, 'round', { note: 'Full walk-back recovery. Wet day: backyard tire + rope circuit instead.' })];
     }
@@ -157,10 +157,10 @@
       var list = (p === 1 && early)
         ? [I('dbpress', 3, 12), I('dbrow', 3, '12/side'), I('dbsp', 3, 10), I('pullapart', 2, 15), I('core', 2, 'round')]
         : [I('dbpress', 4, '10-12', slow), I('dbrow', 4, '10-12/side', slow), I('dbsp', 3, '10-12', slow), I('pullapart', 3, '15-20'), I('core', 3, 'round')];
-      if (w >= 3) {
-        var at = list.map(function (it) { return it.k; }).indexOf('pullapart');
-        list.splice(at, 0, I('curl', 3, '10-12', { note: 'Superset with the extension: curl, extension, 60 s rest. First time: a weight you can do 12 with, 2 left.' }),
-          I('ohext', 3, '10-12', { note: 'Superset with the curl' }));
+      {
+        var at = list.map(function (it) { return it.k; }).indexOf('pullapart'), ea = p === 1 && early;
+        list.splice(at, 0, I('curl', ea ? 2 : 3, ea ? 12 : '10-12', { note: 'Superset with the extension: curl, extension, 60 s rest. ' + (ea ? 'Light: a weight you could do 16-18 times.' : 'A weight you can do 12 with, 2 left.') }),
+          I('ohext', ea ? 2 : 3, ea ? 12 : '10-12', { note: 'Superset with the curl' + (ea ? '. Light.' : '') }));
         list[at + 2] = clone(list[at + 2]); list[at + 2].note = 'Superset with the core work: alternate, no rest between';
       }
       if (p === 4) list.push(I('dtp_db', 5, '50-10', { dtp: DTP_REPS, rest: 45, finisher: true, note: 'Rows or presses. 45 s rest.' }));
@@ -210,6 +210,7 @@
         note = 'Taper: main lifts 3 x 3 at ~90% of your best, everything else half the sets.';
       }
     }
+    if (w <= 2) items.forEach(function (it) { it.hold = true; }); // Weeks 1-2: no weight increases while movements come back
     return { code: code, title: TITLES[code], location: location(code, w), week: w, kind: kind, light: kind === 'deload' || kind === 'xmas' || kind === 'taper', items: items, note: note,
       counts: !(code === 'RUN' || code === 'COND') };
   }

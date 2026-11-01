@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var P = window.Plan, EX = P.EX;
-  var VERSION = '1.3.0';
+  var VERSION = '1.4.0';
   var KEY = 'lift.v1';
   var $app = document.getElementById('app');
 
@@ -63,11 +63,13 @@
     var last = lastWorking(item.k, date); out.last = last;
     if (item.test) { out.w = bestWorking(item.k, date); out.hint = 'Warm up, then add weight each set of 5 until it is a true 5-rep max.'; return out; }
     if (item.from != null && !loggedInPhase(item.k, phaseN, date)) { out.w = item.from; out.hint = 'Phase ' + phaseN + ' starting weight.'; }
+    else if (last && item.hold) { out.w = last.top; out.hint = 'Weeks 1-2: same weight while the movement comes back. Progression starts in Week 3.'; }
     else if (last) {
-      if (last.allTop && ex.inc) {
+      var inc = item.inc != null ? item.inc : ex.inc;
+      if (last.allTop && inc) {
         if (ex.kind === 'db') { out.w = last.top; out.hint = 'Every set hit ' + last.hi + ' last time: go up one dumbbell step.'; out.up = true; }
-        else { out.w = last.top + ex.inc; out.hint = 'Every set hit ' + last.hi + ' last time: +' + kg(ex.inc) + ' kg.'; out.up = true; }
-      } else { out.w = last.top; if (item.hi) out.hint = 'Same weight until every set reaches ' + item.hi + '.'; }
+        else { out.w = last.top + inc; out.hint = 'Every set hit ' + last.hi + ' last time: +' + kg(inc) + ' kg.'; out.up = true; }
+      } else { out.w = last.top; if (item.hi) out.hint = last.sets.every(function (x) { return x.r != null && x.r >= item.hi; }) ? 'Same weight for the new sets and reps.' : 'Same weight until every set reaches ' + item.hi + '.'; }
     } else if (ex.seed && lastWorking(ex.seed.k, date) && lastWorking(ex.seed.k, date).top) {
       out.w = roundTo(lastWorking(ex.seed.k, date).top * ex.seed.x, stepFor(ex.kind)); out.hint = 'New this block: start from your ' + EX[ex.seed.k].name.toLowerCase() + ' weight.';
     } else if (ex.start != null) out.w = ex.start;
