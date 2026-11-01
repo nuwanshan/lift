@@ -2,7 +2,7 @@
 (function () {
   'use strict';
   var P = window.Plan, EX = P.EX;
-  var VERSION = '1.2.0';
+  var VERSION = '1.3.0';
   var KEY = 'lift.v1';
   var $app = document.getElementById('app');
 

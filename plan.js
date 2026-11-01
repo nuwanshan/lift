@@ -49,7 +49,7 @@
   var EX = {
     squat: { name: 'Barbell back squat', kind: 'bb', inc: 5, start: 32.5, main: true },
     rdl: { name: 'Romanian deadlift', kind: 'bb', inc: 5, start: 32.5 },
-    deadlift: { name: 'Deadlift', kind: 'bb', inc: 5, main: true },
+    deadlift: { name: 'Deadlift', kind: 'bb', inc: 5, main: true, seed: { k: 'rdl', x: 1 } }, // from Week 7; first session = last RDL weight
     lunge: { name: 'Walking lunge', kind: 'db', inc: 2, start: 0 },
     legpress: { name: 'Leg press', kind: 'machine', inc: 5, start: 45 },
     legcurl: { name: 'Leg curl', kind: 'machine', inc: 2.5 },
@@ -125,9 +125,9 @@
       if (p === 1) return early
         ? [I('squat', 3, 8), I('rdl', 3, 10), I('lunge', 2, '10/leg', { note: 'Bodyweight' }), I('legpress', 2, 12), I('calf', 3, 12)]
         : [I('squat', 4, '6-8'), I('rdl', 3, '8-10'), I('lunge', 3, '10/leg'), I('legpress', 3, '10-12'), I('calf', 3, '12-15')];
-      if (p === 2) return [I('squat', 4, '5-6', { note: 'Heavier than Phase 1' }), I('rdl', 3, '8-10'), I('lunge', 3, '10/leg'), I('calf', 3, '12-15'),
+      if (p === 2) return [I('squat', 4, '5-6', { note: 'Heavier than Phase 1' }), I('deadlift', 3, 5, { note: 'Replaces the RDL. Same setup every rep: bar over midfoot, shins to bar, brace, push the floor away. +5 kg only when all 15 reps are clean.' }), I('lunge', 3, '10/leg'), I('calf', 3, '12-15'),
         I('dtp_lp', 5, '50-10', { dtp: DTP_REPS, rest: 45, finisher: true, note: '45 s rest. A weight you can do 50 with; rest-pausing = too heavy.' })];
-      if (p === 3) return [I('squat', 5, 5, { from: 75, note: '+2.5 kg/week only if all 25 reps clean' }), I('deadlift', 3, 5, { from: 80, note: '+5 kg/week if clean' }),
+      if (p === 3) return [I('squat', 5, 5, { from: 75, note: '+2.5 kg/week only if all 25 reps clean' }), I('deadlift', 3, 5, { note: 'Carries on from Phase 2. +5 kg only when all 15 reps are clean.' }),
         I('lunge', 3, '8/leg', { note: 'Dumbbells' }), I('legcurl', 3, 10), I('calf', 3, 12),
         I('dtp_lp', 5, '50-10', { dtp: DTP_REPS, rest: 45, finisher: true, optional: true, note: 'Only if you are under 45 min.' })];
       return [I('squat', 4, '4-5'), I('deadlift', 3, '3-5'), I('lunge', 3, '8/leg'), I('calf', 3, 12)];
@@ -148,8 +148,8 @@
         : [I('goblet', 4, '10-12'), I('dbrdl', 3, '10-12'), I('bss', 3, '8-10/leg'), I('carry', 4, '40 m'), I('tire', 3, '5-8')];
       if (p === 2) return [I('goblet', 4, '10-12'), I('dbrdl', 3, '10-12'), I('bss', 3, '8-10/leg'), I('carry', 4, '40 m', { note: 'Load toward 30-40 kg' }),
         I('emom', 8, 'round', { finisher: true, note: 'Odd minutes 3 flips, even minutes 20 m carry' })];
-      if (p === 3) return [I('goblet', 4, 10, { from: 24, note: '3 s lowering' }), I('bss', 3, '8/leg', { note: 'Dumbbells' }), I('carry', 4, '40 m', { from: 40 }), I('tire', 3, 6)];
-      return [I('goblet', 3, 10, { note: 'Stadium: 15 min strength first' }), I('carry', 3, '40 m'),
+      if (p === 3) return [I('goblet', 4, 10, { from: 24, note: '3 s lowering' }), I('dbrdl', 3, '8-10', { note: '3 s lowering, hamstrings and glutes' }), I('bss', 3, '8/leg', { note: 'Dumbbells' }), I('carry', 4, '40 m', { from: 40 }), I('tire', 3, 6)];
+      return [I('goblet', 3, 10, { note: 'Stadium: 15 min strength first' }), I('dbrdl', 3, 10, { note: 'Hamstrings and glutes' }), I('carry', 3, '40 m'),
         I('stairs', 10, 'round', { note: 'Full walk-back recovery. Wet day: backyard tire + rope circuit instead.' })];
     }
     if (code === 'D') {
